@@ -10,6 +10,13 @@
 # You'll need Python 3 and must install these packages:
 #
 #   PyOpenGL, GLFW
+import sys
+import site
+sys.path.append(site.getsitepackages()[0])
+
+print(sys.executable)
+print(sys.path)
+
 
 
 import sys, os, math
@@ -177,17 +184,34 @@ def buildHull( points ):
 
         # Base case of 3 points: make a hull
         
-        # [YOUR CODE HERE]
-      
-        pass
+        a, b, c = points
+        
+        # Determine the turn direction
+        turn_direction = turn(a, b, c)
+        
+        if turn_direction == LEFT_TURN:
+            # Set CCW and CW pointers for a left turn
+            a.ccwPoint, a.cwPoint = c, b
+            b.ccwPoint, b.cwPoint = a, c
+            c.ccwPoint, c.cwPoint = b, a
+        else:
+            # Set CCW and CW pointers for a right turn or collinear points
+            a.ccwPoint, a.cwPoint = b, c
+            b.ccwPoint, b.cwPoint = c, a
+            c.ccwPoint, c.cwPoint = a, b
+        
+        return points
 
     elif len(points) == 2:
 
         # Base case of 2 points: make a hull
-
-        # [YOUR CODE HERE]
-      
-        pass
+        a, b = points
+        
+        # Set CCW and CW pointers for both points
+        a.ccwPoint, a.cwPoint = b, b
+        b.ccwPoint, b.cwPoint = a, a
+        
+        return points
 
     else:
 

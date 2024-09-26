@@ -190,16 +190,16 @@ def buildHull( points ):
         
         pointA, pointB, pointC = points # extract 3 points: a, b, & c
         
-        # Determine the turn direction
-        turn_direction = turn(pointA, pointB, pointC)
+        # Determine the turn direction of points in sequence (a, b, c)
+        turnDirection = turn(pointA, pointB, pointC)
         
-        if turn_direction == LEFT_TURN:
+        if turnDirection == LEFT_TURN:
             # Set CCW and CW pointers for a left turn
             pointA.ccwPoint, pointA.cwPoint = pointB, pointC
             pointB.ccwPoint, pointB.cwPoint = pointC, pointA
             pointC.ccwPoint, pointC.cwPoint = pointA, pointB
-        elif turn_direction == RIGHT_TURN:
-            # Set CCW and CW pointers for a right turn
+        elif turnDirection == RIGHT_TURN:
+            # Set CCW and CW pointers for a right turn, reverse of above
             pointA.ccwPoint, pointA.cwPoint = pointC, pointB
             pointB.ccwPoint, pointB.cwPoint = pointA, pointC
             pointC.ccwPoint, pointC.cwPoint = pointB, pointA
@@ -210,8 +210,9 @@ def buildHull( points ):
             pointC.cwPoint = pointB, pointC.ccwPoint = pointB
 
         # Flag all points as hull points
-        pointA.isHullPoint = True, pointB.isHullPoint = True, pointC.isHullPoint = True
-        pass # not sure why we use this, but keeping from starter code
+        pointA.isHullPoint, pointB.isHullPoint, pointC.isHullPoint = True, True, True
+        
+        pass # should be unncessary, but keeping from starter code just in case
 
     elif len(points) == 2:
 
@@ -224,8 +225,9 @@ def buildHull( points ):
         pointB.ccwPoint, pointB.cwPoint = pointA, pointA
         
         # Flag both points as hull points
-        pointA.isHullPoint = True, pointB.isHullPoint = True
-        return points
+        pointA.isHullPoint, pointB.isHullPoint = True, True
+
+        pass # should be unncessary, but keeping from starter code just in case
 
     else:
 
@@ -233,57 +235,28 @@ def buildHull( points ):
 
         # Step 1: Divide the points into left and right halves
         mid = len(points) // 2
-        left_points = points[:mid]
-        right_points = points[mid:]
+        leftPoints = points[:mid]
+        rightPoints = points[mid:]
 
         # Step 2: Recursively build the left and right hulls
-        left_hull = buildHull(left_points)
-        right_hull = buildHull(right_points)
+        leftHull = buildHull(leftPoints)
+        rightHull = buildHull(rightPoints)
 
         # Debug: Highlight points and display
         for p in points:
             p.highlight = True
         display(wait=addPauses)
 
-        # Step 3: Merge the two hulls (to be implemented)
-        # merged_hull = mergeHulls(left_hull, right_hull)
+        # Step 3: Merge the two hulls - implementing in main body, could be a nested function but not important
+        mergedHull = mergeHulls(leftHull, rightHull)
 
-        # Debug: Display the result and remove highlighting
-        display(wait=addPauses)
-        for p in points:
-            p.highlight = False
-
-        # Return the merged hull (placeholder for now)
-        return points  # This should be changed to return merged_hull once implemented
-
- 
-        # You can do the following to help in debugging.  The code
-        # below highlights all the points, then shows them, then
-        # pauses until you press 'p'.  While paused, you can click on
-        # a point and its coordinates will be printed in the console
-        # window.  If you are using an IDE in which you can inspect
-        # your variables, this will help you to identify which point
-        # on the screen is which point in your data structure.
-        #
-        # This is good to do, for example, after you have recursively
-        # built two hulls (above), to see that the two hulls look right.
-        #
-        # This same highlighting can also be done immediately after you have merged to hulls
-        # ... again, to see that the merged hull looks right.
-
+        # Debug: Highlight points and display
         for p in points:
             p.highlight = True
         display(wait=addPauses)
 
-        # Merge the two hulls
-
-        # [YOUR CODE HERE]
-
-        pass
-
         # Pause to see the result, then remove the highlighting from
         # the points that you previously highlighted:
-
         display(wait=addPauses)
         for p in points:
             p.highlight = False
@@ -291,7 +264,6 @@ def buildHull( points ):
     # At the very end of buildHull(), you should display the result
     # after every merge, as shown below.  This call to display() does
     # not pause.
-    
     display()
 
   
@@ -300,6 +272,66 @@ windowLeft   = None
 windowRight  = None
 windowTop    = None
 windowBottom = None
+
+
+# merge two convex Hulls, following the aproach described in class
+def mergeHulls(leftHull, rightHull):
+    # Flag all points in the left and right hulls as non hull points
+    for pointA, pointB in zip(leftHull, rightHull):
+        pointA.isHullPoint, pointB.isHullPoint = False, False
+
+    # Next find upper hull points
+    leftMostPoint = min(leftHull, key=lambda p: p.x) # find right most point of the left hull
+    rightMostPoint = max(rightHull, key=lambda p: p.x) # find left most point of the right hull
+
+    # Initialize var's for storing tangent points
+    upperLeft, upperRight, lowerLeft, lowerRight = None, None, None, None
+
+    # Find Upper and Lower Tangents
+    for isUpper in [True, False]:
+        leftPoint, rightPoint = leftMostPoint, rightMostPoint # start with left and right most points
+        while True:
+            if isUpper: 
+                # Finding upper tangent
+                if turn(leftPoint, rightPoint, rightPoint.cwPoint) == LEFT_TURN:
+                    rightPoint = rightPoint.cwPoint
+                    updated = True
+                elif turn(rightPoint, leftPoint, leftPoint.ccwPoint) == RIGHT_TURN:
+                    leftPoint = leftPoint.ccwPoint
+                    updated = True
+            else:
+                # Finding lower tangent
+                if turn(leftPoint, rightPoint, rightPoint.ccwPoint) == RIGHT_TURN:
+                    rightPoint = rightPoint.ccwPoint
+                    updated = True
+                elif turn(rightPoint, leftPoint, leftPoint.cwPoint) == LEFT_TURN:
+                    leftPoint = leftPoint.cwPoint
+                    updated = True
+            if not updated:
+                break
+        # Store the found tangent points based on whether we're finding the upper or lower tangent
+        if isUpper:
+            # For the upper tangent, store the leftmost and rightmost points
+            upperLeft, upperRight = leftPoint, rightPoint
+        else:
+            # For the lower tangent, store the leftmost and rightmost points
+            lowerLeft, lowerRight = leftPoint, rightPoint
+
+    # Merge Hulls by updating cw and ccw pointers
+    upperLeft.cwPoint, upperRight.ccwPoint = upperRight, upperLeft
+    lowerLeft.ccwPoint, lowerRight.cwPoint = lowerRight, lowerLeft
+
+    # Traverse the merged hull setting isHullPoint = True
+    while True:
+        currentPoint.isHullPoint = True
+        currentPoint = currentPoint.cwPoint
+        if currentPoint == upperLeft:
+            break
+
+    # Check all points in the left and right hulls and remove hull pointers if they are not on the hull
+    for point in leftHull + rightHull:
+        if not point.isHullPoint:
+            point.ccwPoint, point.cwPoint = None, None
 
 
 # Set up the display and draw the current image

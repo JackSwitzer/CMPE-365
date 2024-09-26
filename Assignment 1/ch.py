@@ -218,7 +218,22 @@ def buildHull( points ):
 
         # Recurse to build left and right hull
 
-        
+        # Step 1: Divide the points into left and right halves
+        mid = len(points) // 2
+        left_points = points[:mid]
+        right_points = points[mid:]
+
+        # Step 2: Recursively build the left and right hulls
+        left_hull = buildHull(left_points)
+        right_hull = buildHull(right_points)
+
+        # Debug: Highlight points and display
+        for p in points:
+            p.highlight = True
+        display(wait=addPauses)
+
+        # Step 3: Merge the two hulls (to be implemented)
+        # merged_hull = mergeHulls(left_hull, right_hull)
 
         # Debug: Display the result and remove highlighting
         display(wait=addPauses)

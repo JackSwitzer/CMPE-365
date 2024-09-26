@@ -1,3 +1,7 @@
+# CMPE 365 Assignment 1
+# Building a convex Hull
+# By: Jack Switzer (20333026) & Andrea Dovale-Puig ()
+
 # Convex hull
 #
 # Usage: python main.py [-d] [-np] file_of_points
@@ -159,9 +163,9 @@ LEFT_TURN  = 1
 RIGHT_TURN = 2
 COLLINEAR  = 3
 
-def turn( a, b, c ):
+def turn( a, pointB, pointC ):
 
-    det = (a.x-c.x) * (b.y-c.y) - (b.x-c.x) * (a.y-c.y)
+    det = (a.x-pointC.x) * (pointB.y-pointC.y) - (pointB.x-pointC.x) * (a.y-pointC.y)
 
     if det > 0:
         return LEFT_TURN
@@ -184,34 +188,43 @@ def buildHull( points ):
 
         # Base case of 3 points: make a hull
         
-        a, b, c = points
+        pointA, pointB, pointC = points # extract 3 points: a, b, & c
         
         # Determine the turn direction
-        turn_direction = turn(a, b, c)
+        turn_direction = turn(pointA, pointB, pointC)
         
         if turn_direction == LEFT_TURN:
             # Set CCW and CW pointers for a left turn
-            a.ccwPoint, a.cwPoint = c, b
-            b.ccwPoint, b.cwPoint = a, c
-            c.ccwPoint, c.cwPoint = b, a
+            pointA.ccwPoint, pointA.cwPoint = pointB, pointC
+            pointB.ccwPoint, pointB.cwPoint = pointC, pointA
+            pointC.ccwPoint, pointC.cwPoint = pointA, pointB
+        elif turn_direction == RIGHT_TURN:
+            # Set CCW and CW pointers for a right turn
+            pointA.ccwPoint, pointA.cwPoint = pointC, pointB
+            pointB.ccwPoint, pointB.cwPoint = pointA, pointC
+            pointC.ccwPoint, pointC.cwPoint = pointB, pointA
         else:
-            # Set CCW and CW pointers for a right turn or collinear points
-            a.ccwPoint, a.cwPoint = b, c
-            b.ccwPoint, b.cwPoint = c, a
-            c.ccwPoint, c.cwPoint = a, b
-        
-        return points
+            # Points are collinear, assuming a sorted array makes point b the middle point
+            pointA.cwPoint = pointB, pointA.ccwPoint = pointB
+            pointB.cwPoint = pointA, pointB.ccwPoint = pointC
+            pointC.cwPoint = pointB, pointC.ccwPoint = pointB
+
+        # Flag all points as hull points
+        pointA.isHullPoint = True, pointB.isHullPoint = True, pointC.isHullPoint = True
+        pass # not sure why we use this, but keeping from starter code
 
     elif len(points) == 2:
 
         # Base case of 2 points: make a hull
 
-        a, b = points
+        pointA, pointB = points # extract both points a & b
         
         # Set CCW and CW pointers for both points, degenerate hull (line segment)
-        a.ccwPoint, a.cwPoint = b, b
-        b.ccwPoint, b.cwPoint = a, a
+        pointA.ccwPoint, pointA.cwPoint = pointB, pointB
+        pointB.ccwPoint, pointB.cwPoint = pointA, pointA
         
+        # Flag both points as hull points
+        pointA.isHullPoint = True, pointB.isHullPoint = True
         return points
 
     else:
@@ -412,7 +425,7 @@ def main():
     global window, allPoints, minX, maxX, minY, maxY, r, discardPoints, addPauses
     
     # Check command-line args
-
+    
     if len(sys.argv) < 2:
         print( 'Usage: %s filename' % sys.argv[0] )
         sys.exit(1)
